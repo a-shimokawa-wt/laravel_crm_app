@@ -2,14 +2,14 @@
   import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
   import { Head } from "@inertiajs/vue3";
   import { Link } from "@inertiajs/vue3";
-  import { Inertia } from "@inertiajs/inertia";
+  import { router } from "@inertiajs/vue3";
 
   defineProps({
     customer: Object,
   });
 
   const deleteCustomer = (id) => {
-    Inertia.delete(route("customers.destroy", { customer: id }), {
+    router.delete(route("customers.destroy", { customer: id }), {
       onBefore: () => confirm("本当に削除しますか？"),
     });
   };

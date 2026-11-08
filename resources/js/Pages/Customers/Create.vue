@@ -3,7 +3,6 @@
   import { Head } from "@inertiajs/vue3";
   import { router } from "@inertiajs/vue3";
   import { reactive } from "vue";
-  import { Inertia } from "@inertiajs/inertia";
   import ValidationErrors from "@/Components/ValidationErrors.vue";
   import { Core as YubinBangoCore } from "yubinbango-core2";
 

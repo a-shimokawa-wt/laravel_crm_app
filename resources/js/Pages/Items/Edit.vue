@@ -2,7 +2,7 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head } from "@inertiajs/vue3";
 import { reactive } from "vue";
-import { Inertia } from "@inertiajs/inertia";
+import { router } from "@inertiajs/vue3";
 import ValidationErrors from "@/Components/ValidationErrors.vue";
 
 const props = defineProps({
@@ -19,7 +19,7 @@ const form = reactive({
 });
 
 const updateItem = (id) => {
-    Inertia.put(route("items.update", { item: id }), form);
+    router.put(route("items.update", { item: id }), form);
 };
 </script>
 

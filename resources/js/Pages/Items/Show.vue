@@ -3,14 +3,14 @@
   import { Head } from "@inertiajs/vue3";
   import { Link } from "@inertiajs/vue3";
   import { nl2br } from "@/common";
-  import { Inertia } from "@inertiajs/inertia";
+  import { router } from "@inertiajs/vue3";
 
   defineProps({
     item: Object,
   });
 
   const deleteItem = (id) => {
-    Inertia.delete(route("items.destroy", { item: id }), {
+    router.delete(route("items.destroy", { item: id }), {
       onBefore: () => confirm("本当に削除しますか？"),
     });
   };

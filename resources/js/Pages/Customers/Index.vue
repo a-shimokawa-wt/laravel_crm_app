@@ -6,7 +6,6 @@
   import { reactive } from "vue";
   import Pagination from "@/Components/Pagination.vue";
   import { ref } from "vue";
-  import { Inertia } from "@inertiajs/inertia";
   import { router } from "@inertiajs/vue3";
 
   const props = defineProps({
@@ -64,7 +63,7 @@
     form.searchTel = null;
     form.searchEmail = null;
 
-    Inertia.get(route("customers.index"), form);
+    router.get(route("customers.index"), form);
   };
 </script>
 

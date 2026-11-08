@@ -2,7 +2,7 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { Head } from "@inertiajs/vue3";
 import { reactive } from "vue";
-import { Inertia } from "@inertiajs/inertia";
+import { router } from "@inertiajs/vue3";
 import ValidationErrors from "@/Components/ValidationErrors.vue";
 
 defineProps({
@@ -16,7 +16,7 @@ const form = reactive({
 });
 
 const storeItem = () => {
-    Inertia.post("/items", form);
+    router.post("/items", form);
 };
 </script>
 

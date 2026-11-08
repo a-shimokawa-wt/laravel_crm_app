@@ -3,7 +3,7 @@
   import { getToday } from "@/common";
   import { Head } from "@inertiajs/vue3";
   import { onMounted, reactive, ref, computed } from "vue";
-  import { Inertia } from "@inertiajs/inertia";
+  import { router } from "@inertiajs/inertia";
   import ValidationErrors from "@/Components/ValidationErrors.vue";
   import MicroModal from "@/Components/MicroModal.vue";
 
@@ -61,7 +61,7 @@
       }
     });
 
-    Inertia.post(route("purchases.store"), form);
+    router.post(route("purchases.store"), form);
   };
 
   // option用
@@ -113,7 +113,7 @@
                             >会員名</label
                           >
                           <MicroModal
-                           @update:customerId="setCustomerId" 
+                           @update:customerId="setCustomerId"
                           />
                         </div>
                       </div>
