@@ -3,7 +3,7 @@
   import { getToday } from "@/common";
   import { Head } from "@inertiajs/vue3";
   import { onMounted, reactive, ref, computed } from "vue";
-  import { router } from "@inertiajs/inertia";
+  import { router } from "@inertiajs/vue3";
   import ValidationErrors from "@/Components/ValidationErrors.vue";
   import MicroModal from "@/Components/MicroModal.vue";
 
