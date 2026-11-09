@@ -6,6 +6,7 @@
   import { reactive } from "vue";
   import Pagination from "@/Components/Pagination.vue";
   import { ref } from "vue";
+  import axios from 'axios';
   import { router } from "@inertiajs/vue3";
 
   const props = defineProps({
@@ -35,7 +36,13 @@
   });
 
   const searchCustomers = () => {
-    router.get(route("customers.index", form));
+    router.get(route("customers.index"), {
+      searchId: searchId.value,
+      searchName: searchName.value,
+      searchKana: searchKana.value,
+      searchTel: searchTel.value,
+      searchEmail: searchEmail.value,
+    });
   };
 
   const getTags = () => {
@@ -65,6 +72,55 @@
 
     router.get(route("customers.index"), form);
   };
+
+
+    const onClickAllExportBtn = async () => {
+        try {
+            const response = await axios.get(route("customers.exportAll"), {
+                responseType: "blob",
+            });
+
+            const contentType = response.headers["content-type"];
+            const blob = new Blob([response.data], { type: contentType });
+
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'allCustomers.csv';
+            link.click();
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error('ファイルのダウンロードに失敗しました', error);
+        }
+    };
+    const onClickSearchExportBtn = async () => {
+        try {
+            // 入力途中の値ではなく、表示中の一覧に適用された検索条件を送る
+            const response = await axios.get(route("customers.exportSearch"), {
+                params: {
+                    searchId: props.filters.searchId,
+                    searchName: props.filters.searchName,
+                    searchKana: props.filters.searchKana,
+                    searchTel: props.filters.searchTel,
+                    searchEmail: props.filters.searchEmail,
+                },
+                responseType: "blob",
+            });
+
+            const url = window.URL.createObjectURL(response.data);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "searchedCustomers.csv";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+        } catch (error) {
+            console.error("検索結果のダウンロードに失敗しました", error);
+            window.alert("検索結果のダウンロードに失敗しました。検索条件を確認してください。");
+        }
+    };
 </script>
 
 <template>
@@ -84,6 +140,24 @@
                 <FlashMessage />
 
                 <div class="flex my-4 lg:w-4/5 w-full mx-auto">
+                  <button
+                    type="button"
+                    @click="onClickAllExportBtn"
+                    class="block w-fit w-2/5 ml-auto text-white whitespace-nowrap bg-amber-300 border-0 py-2 px-6 focus:outline-none hover:bg-amber-400 rounded"
+                  >
+                    全件エクスポート
+                  </button>
+                </div>
+                <div class="flex my-4 lg:w-4/5 w-full mx-auto">
+                  <button
+                    type="button"
+                    @click="onClickSearchExportBtn"
+                    class="block w-fit w-2/5 ml-auto text-white whitespace-nowrap bg-amber-300 border-0 py-2 px-6 focus:outline-none hover:bg-amber-400 rounded"
+                  >
+                    検索結果をエクスポート
+                  </button>
+                </div>
+                <div class="flex my-4 lg:w-4/5 w-full mx-auto">
                   <Link
                     as="button"
                     :href="route('customers.create')"
@@ -95,7 +169,7 @@
                 <div>
                   <h2 class="my-4 lg:w-4/5 w-full mx-auto">顧客検索</h2>
                   <div class="flex my-4 lg:w-4/5 w-full mx-auto">
-                    <form class="w-full">
+                    <form class="w-full" @submit.prevent="searchCustomers">
                       <div class="lg:grid lg:grid-cols-3 lg:gap-3">
                         <div>
                           <label class="">ID: </label><br />
@@ -160,7 +234,6 @@
                       <button
                         type="submit"
                         class="block lg:w-2/12 w-2/5 mb-3 ml-auto text-white  bg-teal-500 border-0 py-2 px-6 focus:outline-none hover:bg-teal-600 rounded"
-                        @click="searchCustomers"
                       >
                         検索
                       </button>

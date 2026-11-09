@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Customer\FilterRequest;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
@@ -41,6 +42,71 @@ class CustomerController extends Controller
         return Inertia::render('Customers/Index', [
             'customers' => $customers,
             'filters' => $filters,
+        ]);
+    }
+
+    public function exportAll()
+    {
+        return response()->streamDownload(function () {
+            $handle = fopen('php://output', 'w');
+
+            // Excelで文字化けしないようにBOMを付与
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            // CSVヘッダー
+            fputcsv($handle, [
+                '氏名',
+                'フリガナ',
+                '電話番号',
+                'メールアドレス',
+            ]);
+
+            // データを取得してCSVに書き込む
+            foreach (
+                Customer::query()
+                ->select('id', 'name', 'kana', 'tel', 'email')
+                ->lazyById(1000) as $customer
+                ){
+                fputcsv($handle, [
+                    $customer->name,
+                    $customer->kana,
+                    $customer->tel,
+                    $customer->email,
+                ]);
+            }
+
+            fclose($handle);
+        }, 'allCustomers.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]
+        );
+    }
+
+    public function exportSearch(FilterRequest $request, FilterAction $action)
+    {
+        $query = $action->invoke(new Request($request->validated()));
+
+        return response()->streamDownload(function () use ($query) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, ['氏名', 'フリガナ', '電話番号', 'メールアドレス']);
+
+            foreach (
+                $query->select('id', 'name', 'kana', 'tel', 'email')
+                    ->lazyById(1000) as $customer
+            ) {
+                fputcsv($handle, [
+                    $customer->name,
+                    $customer->kana,
+                    $customer->tel,
+                    $customer->email,
+                ]);
+            }
+
+            fclose($handle);
+        }, 'searchedCustomers.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
     }
 

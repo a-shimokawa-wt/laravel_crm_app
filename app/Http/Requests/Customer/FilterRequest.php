@@ -25,23 +25,11 @@ class FilterRequest extends FormRequest
     public function rules()
     {
         return [
-            'searchId' => [
-                'nullable',
-                'numeric',
-            ],
-            // 'course_end_at' => [
-            //     'nullable',
-            //     'date',
-            // ],
-            // 'seminar_state' => [
-            //     'nullable',
-            //     'array',
-            // ],
-            // 'any_name' => [
-            //     'nullable',
-            //     'string',
-            //     'max:50',
-            // ],
+            'searchId' => ['nullable', 'integer', 'min:1'],
+            'searchName' => ['nullable', 'string', 'max:255'],
+            'searchKana' => ['nullable', 'string', 'max:255'],
+            'searchTel' => ['nullable', 'string', 'max:20'],
+            'searchEmail' => ['nullable', 'string', 'max:255'],
         ];
     }
 

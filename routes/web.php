@@ -22,8 +22,19 @@ use App\Http\Controllers\PurchaseController;
 
 Route::resource('items', ItemController::class)
     ->middleware(['auth', 'verified']);
-Route::resource('customers', CustomerController::class)
-    ->middleware(['auth', 'verified']);
+Route::middleware((['auth','verified']))->group(function (){
+    // CSVインポート
+    Route::post('customers/import', [CustomerController::class, 'import'])->name('customers.import');
+
+    // CSVエクスポート:全件
+    Route::get('customers/export/all',[CustomerController::class,'exportAll'])->name('customers.exportAll');
+
+    // CSVエクスポート:検索結果
+    Route::get('customers/export/search',[CustomerController::class,'exportSearch'])->name('customers.exportSearch');
+
+    // 既存の顧客CRUDルート
+    Route::resource('customers',CustomerController::class);
+});
 Route::resource('purchases', PurchaseController::class)
     ->middleware(['auth', 'verified']);
 
