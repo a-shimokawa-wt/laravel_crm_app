@@ -5,14 +5,20 @@
   import { Link } from "@inertiajs/vue3";
   import { reactive } from "vue";
   import Pagination from "@/Components/Pagination.vue";
+  import { useForm } from '@inertiajs/vue3';
   import { ref } from "vue";
   import axios from 'axios';
   import { router } from "@inertiajs/vue3";
+
 
   const props = defineProps({
     customers: Object,
     filters: Object,
   });
+
+  const importForm = useForm({
+    importFile: null
+});
 
   console.log("filters", props.filters);
 
@@ -121,6 +127,35 @@
             window.alert("検索結果のダウンロードに失敗しました。検索条件を確認してください。");
         }
     };
+
+const showInput = ref(null);
+const importErrorMessages = ref([]);
+const isCloseImportError = ref(false);
+
+const onClickImportBtn = () => showInput.value?.click();
+const onClickCloseImportErrorBtn = () => (isCloseImportError.value = true);
+
+const onSelectFile = (event) => {
+    const inputElement = event.target;
+
+    if(!inputElement.files || inputElement.files.length === 0) return;
+
+    if(inputElement.files && inputElement.files.length > 0){
+        importForm.importFile = inputElement.files[0];
+    }
+
+    importForm.post(route('customers.import'),{
+        onError: (errors) => {
+              importErrorMessages.value = Object.values(errors);
+              isCloseImportError.value = false;
+        },
+        onFinish: () => {
+          importForm.importFile = null;
+          inputElement.value = '';
+        }
+    })
+
+}
 </script>
 
 <template>
@@ -142,8 +177,17 @@
                 <div class="flex my-4 lg:w-4/5 w-full mx-auto">
                   <button
                     type="button"
+                    @click="onClickImportBtn"
+                    class="block w-fit w-2/5 text-black whitespace-nowrap bg-cyan-300 border-0 py-2 px-6 focus:outline-none hover:bg-cyan-400 rounded"
+                  >
+                    インポート
+                  </button>
+                </div>
+                <div class="flex my-4 lg:w-4/5 w-full mx-auto">
+                  <button
+                    type="button"
                     @click="onClickAllExportBtn"
-                    class="block w-fit w-2/5 ml-auto text-white whitespace-nowrap bg-amber-300 border-0 py-2 px-6 focus:outline-none hover:bg-amber-400 rounded"
+                    class="block w-fit w-2/5 ml-auto text-black whitespace-nowrap bg-amber-300 border-0 py-2 px-6 focus:outline-none hover:bg-amber-400 rounded"
                   >
                     全件エクスポート
                   </button>
@@ -152,7 +196,7 @@
                   <button
                     type="button"
                     @click="onClickSearchExportBtn"
-                    class="block w-fit w-2/5 ml-auto text-white whitespace-nowrap bg-amber-300 border-0 py-2 px-6 focus:outline-none hover:bg-amber-400 rounded"
+                    class="block w-fit w-2/5 ml-auto text-black whitespace-nowrap bg-amber-300 border-0 py-2 px-6 focus:outline-none hover:bg-amber-400 rounded"
                   >
                     検索結果をエクスポート
                   </button>
@@ -165,6 +209,15 @@
                   >
                     顧客登録
                   </Link>
+                </div>
+                <div v-if="importErrorMessages.length > 0 && !isCloseImportError" class="lg:w-4/5 w-full mx-auto my-2 p-2 border border-red-400 bg-gray-50 rounded text-red-600">
+                  <div class="flex items-center">
+                    <div>インポートできませんでした。以下をご確認ください</div>
+                    <button type="button" class="ml-auto px-2" @click="onClickCloseImportErrorBtn">×</button>
+                  </div>
+                  <div class="mt-1" v-for="message in importErrorMessages" :key="message">
+                    {{ message }}
+                  </div>
                 </div>
                 <div>
                   <h2 class="my-4 lg:w-4/5 w-full mx-auto">顧客検索</h2>
@@ -342,5 +395,6 @@
         </div>
       </div>
     </div>
+    <input ref="showInput" type="file" @change="onSelectFile" accept=".csv" hidden>
   </AuthenticatedLayout>
 </template>
