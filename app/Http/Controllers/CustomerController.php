@@ -9,6 +9,8 @@ use App\Models\Customer;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Domains\Customer\UseCases\Customer\FilterAction;
+use App\Http\Requests\Customer\ImportRequest;
+use RuntimeException;
 
 class CustomerController extends Controller
 {
@@ -43,6 +45,55 @@ class CustomerController extends Controller
             'customers' => $customers,
             'filters' => $filters,
         ]);
+    }
+
+    public function import(ImportRequest $request){
+
+        $header = [
+        '名前',
+        'カナ',
+        '電話番号',
+        'メールアドレス',
+        '郵便番号',
+        '住所',
+        '誕生日',
+        '性別',
+        'メモ',];
+
+        $path = $request->file()->getRealPath();
+
+        if($path === false){
+            throw new RuntimeException("ファイルパスが取得できません");
+        }
+
+        $stream = fopen($path,'r');
+
+        if($stream === false){
+            throw new RuntimeException("ファイルを開くことができません");
+        }
+
+        $contents = file_get_contents($path);
+
+        if($contents === false){
+            throw new RuntimeException('ファイルを読み取れません');
+        }
+
+        if(mb_check_encoding($contents,'UTF-8')){
+            throw new RuntimeException('UTF-8形式のファイルを指定してください');
+        }
+
+        // BOM対策（BOMがなければ読み込み位置を戻す）
+        if(fread($path,3) !== 'xEF/xBB/xBF'){
+            rewind($stream);
+        }
+
+        if(fgetcsv($stream) !== $header){
+            throw new RuntimeException('CSVのヘッダーが正しくありません');
+        }
+
+
+
+
     }
 
     public function exportAll()
