@@ -9,11 +9,16 @@ use App\Models\Customer;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Domains\Customer\UseCases\Customer\FilterAction;
+use App\FormRules\StoreCustomerRules;
 use App\Http\Requests\Customer\ImportRequest;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 class CustomerController extends Controller
 {
+    private int $CSV_DATA_NUMBER = 100;
+
     /**
      * Display a listing of the resource.
      *
@@ -87,9 +92,60 @@ class CustomerController extends Controller
             rewind($stream);
         }
 
+        // ヘッダ行がないCSV向けのファイルポインタ調整
         if(fgetcsv($stream) !== $header){
-            throw new RuntimeException('CSVのヘッダーが正しくありません');
+            fseek($stream,4);
         }
+
+        $validatedRows = [];
+        $recordNumber = 0;
+
+        while(($row = fgetcsv($stream)) !== false){
+            if($row === [null]){
+                continue;
+            }
+
+            $recordNumber++;
+
+            if($recordNumber > $this->CSV_DATA_NUMBER){
+                throw new ValidationException("データ数は$this->CSV_DATA_NUMBER 以内にしてください");
+            }
+
+            if(count($row) !== 9){
+                throw new ValidationException("$recordNumber 行目のデータ件数が足りていません");
+            }
+
+            $data = array_combine($header,$row);
+
+            // 余計な空白の除去
+            $data = array_map('trim',$data);
+
+            if($data['誕生日'] === ''){
+                $data['誕生日'] = null;
+            }
+
+            if($data['メモ'] === ''){
+                $data['メモ'] = null;
+            }
+
+            $rules = StoreCustomerRules::CUSTOMER();
+
+            $validator = Validator::make($data,$rules);
+
+
+            if($validator->fails()){
+                throw new ValidationException("$recordNumber 行目のデータの形式に誤りがあります");
+            }
+
+
+
+
+
+
+
+        }
+
+
 
 
 
