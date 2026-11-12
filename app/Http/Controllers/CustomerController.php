@@ -65,7 +65,7 @@ class CustomerController extends Controller
         '性別',
         'メモ',];
 
-        $path = $request->file()->getRealPath();
+        $path = $request->file('importFile')->getRealPath();
 
         if($path === false){
             throw new RuntimeException("ファイルパスが取得できません");
@@ -83,22 +83,31 @@ class CustomerController extends Controller
             throw new RuntimeException('ファイルを読み取れません');
         }
 
-        if(mb_check_encoding($contents,'UTF-8')){
+        if(!mb_check_encoding($contents,'UTF-8')){
             throw new RuntimeException('UTF-8形式のファイルを指定してください');
         }
 
         // BOM対策（BOMがなければ読み込み位置を戻す）
-        if(fread($path,3) !== 'xEF/xBB/xBF'){
+        if(fread($stream,3) !== 'xEF/xBB/xBF'){
             rewind($stream);
         }
 
         // ヘッダ行がないCSV向けのファイルポインタ調整
         if(fgetcsv($stream) !== $header){
-            fseek($stream,4);
+            fseek($stream,3);
         }
+
+
 
         $validatedRows = [];
         $recordNumber = 0;
+
+        //インポートCSV内で登場したEmail
+        $seenEmails = [];
+        
+        //インポートCSV内で登場した電話番号
+        $seenTels = [];
+
 
         while(($row = fgetcsv($stream)) !== false){
             if($row === [null]){
@@ -107,18 +116,25 @@ class CustomerController extends Controller
 
             $recordNumber++;
 
+            
+
             if($recordNumber > $this->CSV_DATA_NUMBER){
-                throw new ValidationException("データ数は$this->CSV_DATA_NUMBER 以内にしてください");
+                throw ValidationException::withMessages([
+                    'importFile' => ["データ数は$this->CSV_DATA_NUMBER 以内にしてください"],
+                ]);
             }
 
             if(count($row) !== 9){
-                throw new ValidationException("$recordNumber 行目のデータ件数が足りていません");
+                throw ValidationException::withMessages([
+                    'importFile' => ["$recordNumber 行目のデータ件数が足りていません"],
+                ]);
             }
 
             $data = array_combine($header,$row);
 
             // 余計な空白の除去
             $data = array_map('trim',$data);
+
 
             if($data['誕生日'] === ''){
                 $data['誕生日'] = null;
@@ -134,23 +150,41 @@ class CustomerController extends Controller
 
 
             if($validator->fails()){
-                throw new ValidationException("$recordNumber 行目のデータの形式に誤りがあります");
+                throw ValidationException::withMessages([
+                    'importFile' => ["$recordNumber 行目のデータの形式に誤りがあります"],
+                ]);
+            }
+            $validated = $validator->validated();
+
+
+            if(in_array($validated['メールアドレス'], $seenEmails)){
+                throw ValidationException::withMessages([
+                    'importFile' => ["$recordNumber 行目のメールアドレスが重複しています"],
+                ]);
             }
 
+            if(in_array($validated['電話番号'], $seenTels)){
+                throw ValidationException::withMessages([
+                    'importFile' => ["$recordNumber 行目の電話番号が重複しています"],
+                ]);
+            }
 
+            array_push($seenEmails, $validated['メールアドレス']);
+            array_push($seenTels, $validated['電話番号']);
 
-
-
-
+            // 検証済みデータ
+            array_push($validatedRows, $validated);
 
         }
 
+        Customer::create($validatedRows);
 
-
-
-
-
-    }
+        return to_route('customers.index')
+            ->with([
+                'message' => '登録しました。',
+                'status' => 'success'
+            ]);
+        }
 
     public function exportAll()
     {
